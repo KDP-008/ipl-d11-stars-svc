@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+
+    <changeSet id="20260404-00-create-pgcrypto-extension" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="1">SELECT count(*) FROM pg_extension WHERE extname='pgcrypto';</sqlCheck>
+            </not>
+        </preConditions>
+        <sql>CREATE EXTENSION IF NOT EXISTS pgcrypto;</sql>
+    </changeSet>
+
+    <changeSet id="20260404-01-create-users" author="copilot">
+        <createTable tableName="users">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="first_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="varchar(255)"/>
+            <column name="mobile" type="varchar(20)"/>
+            <column name="email" type="varchar(255)"/>
+            <column name="password_hash" type="varchar(255)"/>
+            <column name="password_salt" type="varchar(255)"/>
+            <column name="verification_code" type="varchar(16)"/>
+            <column name="verification_expires_at" type="timestamp with time zone"/>
+            <column name="mobile_verified" type="boolean" defaultValueBoolean="false"/>
+            <column name="email_verified" type="boolean" defaultValueBoolean="false"/>
+            <column name="status" type="varchar(50)" defaultValue="ACTIVE"/>
+            <column name="last_login_at" type="timestamp with time zone"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="users" columnNames="email" constraintName="uq_users_email"/>
+        <addUniqueConstraint tableName="users" columnNames="mobile" constraintName="uq_users_mobile"/>
+    </changeSet>
+
+    <changeSet id="20260404-02-create-teams" author="copilot">
+        <createTable tableName="teams">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="short_name" type="varchar(50)"/>
+            <column name="slug" type="varchar(100)"/>
+            <column name="logo_url" type="varchar(512)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="teams" columnNames="slug" constraintName="uq_teams_slug"/>
+    </changeSet>
+
+    <changeSet id="20260404-03-create-players" author="copilot">
+        <createTable tableName="players">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="team_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="full_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="varchar(50)"/>
+            <column name="nationality" type="varchar(100)"/>
+            <column name="batting_style" type="varchar(100)"/>
+            <column name="bowling_style" type="varchar(100)"/>
+            <column name="is_active" type="boolean" defaultValueBoolean="true"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="players" baseColumnNames="team_id"
+                                 referencedTableName="teams" referencedColumnNames="id"
+                                 constraintName="fk_players_team"/>
+    </changeSet>
+
+    <changeSet id="20260404-04-create-seasons" author="copilot">
+        <createTable tableName="seasons">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="int"/>
+            <column name="starts_at" type="timestamp with time zone"/>
+            <column name="ends_at" type="timestamp with time zone"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20260404-05-create-matches" author="copilot">
+        <createTable tableName="matches">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="season_id" type="uuid"/>
+            <column name="external_match_id" type="varchar(255)"/>
+            <column name="match_number" type="varchar(100)"/>
+            <column name="status" type="varchar(50)" defaultValue="SCHEDULED"/>
+            <column name="match_type" type="varchar(50)" defaultValue="T20"/>
+            <column name="start_time_utc" type="timestamp with time zone"/>
+            <column name="venue" type="varchar(255)"/>
+            <column name="team_home_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="team_away_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="matches" baseColumnNames="season_id"
+                                 referencedTableName="seasons" referencedColumnNames="id"
+                                 constraintName="fk_matches_season"/>
+        <addForeignKeyConstraint baseTableName="matches" baseColumnNames="team_home_id"
+                                 referencedTableName="teams" referencedColumnNames="id"
+                                 constraintName="fk_matches_home_team"/>
+        <addForeignKeyConstraint baseTableName="matches" baseColumnNames="team_away_id"
+                                 referencedTableName="teams" referencedColumnNames="id"
+                                 constraintName="fk_matches_away_team"/>
+        <addUniqueConstraint tableName="matches" columnNames="external_match_id" constraintName="uq_matches_external_id"/>
+    </changeSet>
+
+    <changeSet id="20260404-06-create-match_squad" author="copilot">
+        <createTable tableName="match_squad">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="match_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="team_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_starting_xi" type="boolean" defaultValueBoolean="false"/>
+            <column name="is_impact_player" type="boolean" defaultValueBoolean="false"/>
+            <column name="batting_order" type="int"/>
+            <column name="bowling_order" type="int"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="match_squad" baseColumnNames="match_id"
+                                 referencedTableName="matches" referencedColumnNames="id"
+                                 constraintName="fk_match_squad_match"/>
+        <addForeignKeyConstraint baseTableName="match_squad" baseColumnNames="player_id"
+                                 referencedTableName="players" referencedColumnNames="id"
+                                 constraintName="fk_match_squad_player"/>
+        <addForeignKeyConstraint baseTableName="match_squad" baseColumnNames="team_id"
+                                 referencedTableName="teams" referencedColumnNames="id"
+                                 constraintName="fk_match_squad_team"/>
+        <addUniqueConstraint tableName="match_squad" columnNames="match_id,player_id" constraintName="uq_match_squad_match_player"/>
+    </changeSet>
+
+    <changeSet id="20260404-07-create-contests" author="copilot">
+        <createTable tableName="contests">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="created_by" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="match_id" type="uuid"/>
+            <column name="season_id" type="uuid"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contest_type" type="varchar(50)" defaultValue="MATCH"/>
+            <column name="visibility" type="varchar(50)" defaultValue="PRIVATE"/>
+            <column name="invite_code" type="varchar(100)"/>
+            <column name="max_entries" type="int" defaultValueNumeric="100"/>
+            <column name="entry_fee" type="numeric(10,2)" defaultValueNumeric="0.00"/>
+            <column name="prize_pool" type="numeric(12,2)" defaultValueNumeric="0.00"/>
+            <column name="max_winners" type="int" defaultValueNumeric="1"/>
+            <column name="starts_at" type="timestamp with time zone"/>
+            <column name="ends_at" type="timestamp with time zone"/>
+            <column name="status" type="varchar(50)" defaultValue="OPEN"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="contests" baseColumnNames="created_by"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_contests_created_by"/>
+        <addForeignKeyConstraint baseTableName="contests" baseColumnNames="match_id"
+                                 referencedTableName="matches" referencedColumnNames="id"
+                                 constraintName="fk_contests_match"/>
+        <addForeignKeyConstraint baseTableName="contests" baseColumnNames="season_id"
+                                 referencedTableName="seasons" referencedColumnNames="id"
+                                 constraintName="fk_contests_season"/>
+        <addUniqueConstraint tableName="contests" columnNames="invite_code" constraintName="uq_contests_invite_code"/>
+    </changeSet>
+
+    <changeSet id="20260404-08-create-contest_entries" author="copilot">
+        <createTable tableName="contest_entries">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="contest_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entry_name" type="varchar(255)"/>
+            <column name="total_points" type="numeric(10,2)" defaultValueNumeric="0.00"/>
+            <column name="rank" type="int"/>
+            <column name="status" type="varchar(50)" defaultValue="ACTIVE"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="contest_entries" baseColumnNames="contest_id"
+                                 referencedTableName="contests" referencedColumnNames="id"
+                                 constraintName="fk_contest_entries_contest"/>
+        <addForeignKeyConstraint baseTableName="contest_entries" baseColumnNames="user_id"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_contest_entries_user"/>
+        <addUniqueConstraint tableName="contest_entries" columnNames="contest_id,user_id" constraintName="uq_contest_entries_contest_user"/>
+    </changeSet>
+
+    <changeSet id="20260404-09-create-entry_player_selections" author="copilot">
+        <createTable tableName="entry_player_selections">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="contest_entry_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_captain" type="boolean" defaultValueBoolean="false"/>
+            <column name="is_vice_captain" type="boolean" defaultValueBoolean="false"/>
+            <column name="is_impact_player" type="boolean" defaultValueBoolean="false"/>
+            <column name="is_starting_player" type="boolean" defaultValueBoolean="true"/>
+            <column name="selected_at" type="timestamp with time zone" defaultValueComputed="NOW()"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="entry_player_selections" baseColumnNames="contest_entry_id"
+                                 referencedTableName="contest_entries" referencedColumnNames="id"
+                                 constraintName="fk_entry_player_selections_entry"/>
+        <addForeignKeyConstraint baseTableName="entry_player_selections" baseColumnNames="player_id"
+                                 referencedTableName="players" referencedColumnNames="id"
+                                 constraintName="fk_entry_player_selections_player"/>
+        <addUniqueConstraint tableName="entry_player_selections" columnNames="contest_entry_id,player_id" constraintName="uq_entry_selections_entry_player"/>
+    </changeSet>
+
+    <changeSet id="20260404-10-create-player_match_stats" author="copilot">
+        <createTable tableName="player_match_stats">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="match_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="runs_scored" type="int" defaultValueNumeric="0"/>
+            <column name="balls_faced" type="int" defaultValueNumeric="0"/>
+            <column name="fours" type="int" defaultValueNumeric="0"/>
+            <column name="sixes" type="int" defaultValueNumeric="0"/>
+            <column name="wickets" type="int" defaultValueNumeric="0"/>
+            <column name="overs_bowled" type="numeric(4,1)" defaultValueNumeric="0.0"/>
+            <column name="maidens" type="int" defaultValueNumeric="0"/>
+            <column name="runs_conceded" type="int" defaultValueNumeric="0"/>
+            <column name="dot_balls" type="int" defaultValueNumeric="0"/>
+            <column name="lbw_bowled" type="int" defaultValueNumeric="0"/>
+            <column name="catches" type="int" defaultValueNumeric="0"/>
+            <column name="stumpings" type="int" defaultValueNumeric="0"/>
+            <column name="run_outs" type="int" defaultValueNumeric="0"/>
+            <column name="strike_rate" type="numeric(6,2)"/>
+            <column name="economy_rate" type="numeric(6,2)"/>
+            <column name="points" type="numeric(10,2)" defaultValueNumeric="0.00"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="player_match_stats" baseColumnNames="match_id"
+                                 referencedTableName="matches" referencedColumnNames="id"
+                                 constraintName="fk_player_match_stats_match"/>
+        <addForeignKeyConstraint baseTableName="player_match_stats" baseColumnNames="player_id"
+                                 referencedTableName="players" referencedColumnNames="id"
+                                 constraintName="fk_player_match_stats_player"/>
+        <addUniqueConstraint tableName="player_match_stats" columnNames="match_id,player_id" constraintName="uq_player_match_stats_match_player"/>
+    </changeSet>
+
+    <changeSet id="20260404-11-create-indexes" author="copilot">
+        <createIndex tableName="matches" indexName="idx_matches_start_time">
+            <column name="start_time_utc"/>
+        </createIndex>
+        <createIndex tableName="contests" indexName="idx_contests_match_id">
+            <column name="match_id"/>
+        </createIndex>
+        <createIndex tableName="contest_entries" indexName="idx_contest_entries_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="entry_player_selections" indexName="idx_entry_player_selections_player_id">
+            <column name="player_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
