@@ -41,6 +41,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/auth/register", "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/payments/webhook").permitAll()
                 .requestMatchers(HttpMethod.POST, "/matches/*/deliveries", "/matches/*/complete", "/matches/*/abandon").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/matches/*/squad").hasRole("ADMIN")
                 .requestMatchers("/matches/**").permitAll()
