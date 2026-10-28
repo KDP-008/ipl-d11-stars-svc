@@ -2,6 +2,7 @@ package com.ipld11stars.backend.controller;
 
 import com.ipld11stars.backend.dto.ContestDTO;
 import com.ipld11stars.backend.model.Contest;
+import com.ipld11stars.backend.model.ContestPrize;
 import com.ipld11stars.backend.model.Match;
 import com.ipld11stars.backend.model.User;
 import com.ipld11stars.backend.service.ContestService;
@@ -94,7 +95,9 @@ public class ContestController {
                 request.getMaxEntries(),
                 request.getEntryFee() != null ? request.getEntryFee() : BigDecimal.ZERO,
                 request.getPrizePool() != null ? request.getPrizePool() : BigDecimal.ZERO,
-                request.getMaxWinners() != null ? request.getMaxWinners() : 1
+                request.getMaxWinners() != null ? request.getMaxWinners() : 1,
+                request.getMinEntries(),
+                request.getPrizes()
             );
 
             Map<String, Object> response = Map.of(
@@ -196,8 +199,14 @@ public class ContestController {
         private BigDecimal prizePool;
         private Integer maxWinners;
         private String matchId;
+        private Integer minEntries;
+        private List<ContestPrize> prizes;
 
         // Getters and Setters
+        public Integer getMinEntries() { return minEntries; }
+        public void setMinEntries(Integer minEntries) { this.minEntries = minEntries; }
+        public List<ContestPrize> getPrizes() { return prizes; }
+        public void setPrizes(List<ContestPrize> prizes) { this.prizes = prizes; }
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
         public String getContestType() { return contestType; }

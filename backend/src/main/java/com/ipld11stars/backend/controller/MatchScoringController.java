@@ -6,6 +6,7 @@ import com.ipld11stars.backend.dto.SquadRequest;
 import com.ipld11stars.backend.model.PlayerMatchStats;
 import com.ipld11stars.backend.model.SquadMember;
 import com.ipld11stars.backend.scoring.InningsState;
+import com.ipld11stars.backend.service.ContestLifecycleService;
 import com.ipld11stars.backend.service.DeliveryService;
 import com.ipld11stars.backend.service.MatchSquadService;
 import com.ipld11stars.backend.service.PlayerStatsService;
@@ -26,12 +27,26 @@ public class MatchScoringController {
     private final MatchSquadService squadService;
     private final DeliveryService deliveryService;
     private final PlayerStatsService playerStatsService;
+    private final ContestLifecycleService lifecycleService;
 
     public MatchScoringController(MatchSquadService squadService, DeliveryService deliveryService,
-                                  PlayerStatsService playerStatsService) {
+                                  PlayerStatsService playerStatsService, ContestLifecycleService lifecycleService) {
         this.squadService = squadService;
         this.deliveryService = deliveryService;
         this.playerStatsService = playerStatsService;
+        this.lifecycleService = lifecycleService;
+    }
+
+    @PostMapping("/complete")
+    public Map<String, String> complete(@PathVariable String matchId) {
+        lifecycleService.completeMatch(matchId);
+        return Map.of("matchId", matchId, "status", "COMPLETED");
+    }
+
+    @PostMapping("/abandon")
+    public Map<String, String> abandon(@PathVariable String matchId) {
+        lifecycleService.abandonMatch(matchId);
+        return Map.of("matchId", matchId, "status", "ABANDONED");
     }
 
     @GetMapping("/squad")

@@ -15,4 +15,10 @@ public class TestBeans {
     public RecordingEmailSender recordingEmailSender() {
         return new RecordingEmailSender();
     }
+
+    @Bean
+    @Primary
+    public MutableClock mutableClock() {
+        return new MutableClock();
+    }
 }

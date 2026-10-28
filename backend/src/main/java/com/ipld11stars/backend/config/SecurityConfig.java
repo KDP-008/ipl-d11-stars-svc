@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/matches/*/deliveries", "/matches/*/complete", "/matches/*/abandon").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/matches/*/squad").hasRole("ADMIN")
                 .requestMatchers("/matches/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/contests/*/leaderboard", "/contests/*/prizes").permitAll()
                 .requestMatchers("/contests", "/contests/*").permitAll()
                 .requestMatchers("/contests/create").authenticated()
                 .requestMatchers("/contests/*/edit").authenticated()

@@ -33,6 +33,7 @@ public class ContestRepository {
         contest.setEntryFee(rs.getBigDecimal("entry_fee"));
         contest.setPrizePool(rs.getBigDecimal("prize_pool"));
         contest.setMaxWinners(rs.getInt("max_winners"));
+        contest.setMinEntries(rs.getInt("min_entries"));
         contest.setStatus(rs.getString("status"));
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {
@@ -81,12 +82,13 @@ public class ContestRepository {
     private Contest insert(Contest contest) {
         String id = UUID.randomUUID().toString();
         String sql = "INSERT INTO ipld11stars.contests (id, name, match_id, created_by_user_id, contest_type, " +
-                    "visibility, max_entries, current_entries, entry_fee, prize_pool, max_winners, status, created_at, updated_at) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                    "visibility, max_entries, current_entries, entry_fee, prize_pool, max_winners, min_entries, status, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         jdbcTemplate.update(sql, id, contest.getName(), contest.getMatchId(), contest.getCreatedByUserId(),
                            contest.getContestType(), contest.getVisibility(), contest.getMaxEntries(),
                            contest.getCurrentEntries(), contest.getEntryFee(), contest.getPrizePool(),
-                           contest.getMaxWinners(), contest.getStatus());
+                           contest.getMaxWinners(), contest.getMinEntries() != null ? contest.getMinEntries() : 2,
+                           contest.getStatus());
         contest.setId(id);
         return contest;
     }
@@ -112,6 +114,41 @@ public class ContestRepository {
         if (rowsAffected == 0) {
             throw new RuntimeException("Contest not found or user is not the creator");
         }
+    }
+
+    /** Takes one entry slot if the contest is open and not full; returns false otherwise. */
+    public boolean tryTakeEntrySlot(String contestId) {
+        return jdbcTemplate.update("UPDATE ipld11stars.contests SET current_entries = current_entries + 1, updated_at = NOW() " +
+                "WHERE id = ? AND status = 'OPEN' AND current_entries < max_entries", contestId) == 1;
+    }
+
+    /** Moves a contest from one of the expected statuses to a new one; returns false if it was in another status. */
+    public boolean transitionStatus(String contestId, List<String> fromStatuses, String toStatus) {
+        String placeholders = String.join(", ", java.util.Collections.nCopies(fromStatuses.size(), "?"));
+        String timestampColumn = switch (toStatus) {
+            case "LOCKED" -> ", locked_at = NOW()";
+            case "COMPLETED", "CANCELLED" -> ", settled_at = NOW()";
+            default -> "";
+        };
+        Object[] args = new Object[fromStatuses.size() + 2];
+        args[0] = toStatus;
+        args[1] = contestId;
+        for (int i = 0; i < fromStatuses.size(); i++) {
+            args[i + 2] = fromStatuses.get(i);
+        }
+        return jdbcTemplate.update("UPDATE ipld11stars.contests SET status = ?, updated_at = NOW()" + timestampColumn +
+                " WHERE id = ? AND status IN (" + placeholders + ")", args) == 1;
+    }
+
+    public List<Contest> findByMatchIdAndStatusIn(String matchId, List<String> statuses) {
+        String placeholders = String.join(", ", java.util.Collections.nCopies(statuses.size(), "?"));
+        Object[] args = new Object[statuses.size() + 1];
+        args[0] = matchId;
+        for (int i = 0; i < statuses.size(); i++) {
+            args[i + 1] = statuses.get(i);
+        }
+        return jdbcTemplate.query("SELECT * FROM ipld11stars.contests WHERE match_id = ? AND status IN (" + placeholders +
+                ") ORDER BY created_at, id", contestRowMapper, args);
     }
 
     public boolean canUserEditContest(String contestId, String userId) {

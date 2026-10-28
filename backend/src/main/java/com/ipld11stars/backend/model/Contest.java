@@ -15,6 +15,7 @@ public class Contest {
     private BigDecimal entryFee;
     private BigDecimal prizePool;
     private Integer maxWinners;
+    private Integer minEntries = 2;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -38,6 +39,14 @@ public class Contest {
     }
 
     // Getters and Setters
+    public Integer getMinEntries() {
+        return minEntries;
+    }
+
+    public void setMinEntries(Integer minEntries) {
+        this.minEntries = minEntries;
+    }
+
     public String getId() {
         return id;
     }

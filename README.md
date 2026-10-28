@@ -1,97 +1,59 @@
-# IPL D11 Stars
+# IPL D11 Stars Service (`ipl-d11-stars-svc`)
 
-A fantasy cricket backend built with Java 21, Spring Boot 3.2, and PostgreSQL.
+A fantasy cricket backend service built with Java 21, Spring Boot 3.2, Spring JDBC (`JdbcTemplate`), and PostgreSQL.
 
-## What is included
+## Features
 
-- Spring Boot 3.2 REST API with Spring JDBC (`JdbcTemplate`)
-- PostgreSQL database integration with auto-initialized schema (`schema.sql` / `ddl.sql`)
-- JWT Authentication (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
-- Match schedule synchronization service (`IplApiService`) with BCCI/IPL feed parser
-- Contest management endpoints (`/api/contests`)
-- Health check endpoint (`/api/health`)
-- Dockerfile and `docker-compose.yml` for 1-command local development
+- **Authentication & Users**: JWT registration, login, and profile endpoints (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`) with automatic wallet provisioning.
+- **Match Sync & Squad Management**: IPL schedule synchronization (`IplApiService`), 22-player squad registration, Playing XI announcements, and player credit/role management.
+- **Ball-by-Ball T20 Scoring Engine**: Legal/extra delivery tracking (`NONE`, `WIDE`, `NO_BALL`, `BYE`, `LEG_BYE`), maiden over detection, dismissal validation, and full Dream11 T20 fantasy point calculation (batting, bowling, fielding, strike-rate and economy rate bonuses/penalties).
+- **Contests & Fantasy XI Validation**: Dream11 11-player team validation (100.0 credit cap, role minimums/maximums, max 7 players per real team, distinct Captain 2x and Vice-Captain 1.5x multipliers).
+- **Live Leaderboard, Prize Tables & Contest Settlement**: Competition ranking (`RANK()`), deterministic prize slabs (`WINNER_TAKES_ALL`, `TOP_3`, `TOP_50_PERCENT`), scheduled auto-lock at match start (`ContestLockScheduler`), and automated settlement or cancellation/refund on match completion/abandonment.
+- **Wallet Ledger & Payment Gateway Webhooks**: Double-entry-style transactional wallet credits/debits with `SELECT ... FOR UPDATE` row locking, idempotency keys, deposit orders, withdrawal payouts, and HMAC-SHA256 webhook verification (`/api/webhooks/payments`).
+- **Email Notifications**: Transactional post-commit email delivery (`WELCOME`, `DEPOSIT_CONFIRMED`, `WITHDRAWAL_PROCESSED`, `CONTEST_JOINED`, `CONTEST_SETTLED`, `CONTEST_REFUNDED`) with database audit trail.
 
 ## Getting Started Locally
 
-### Option 1: Run with Docker Compose (Recommended)
+### Option 1: Run with Docker Compose
 
-Start both PostgreSQL and the backend API container with one command:
+Copy `.env.example` to `.env` and set `POSTGRES_PASSWORD` and `JWT_SECRET`, then start PostgreSQL and the backend API container:
 
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
 - **Backend API**: `http://localhost:8080/api`
 - **Health Check**: `http://localhost:8080/api/health`
-- **PostgreSQL**: `localhost:5432` (User: `d11appuser`, Password: the `POSTGRES_PASSWORD` from your `.env`, Database: `ipld11stars`)
-
-To run in detached (background) mode:
-
-```bash
-docker compose up -d --build
-```
-
-To stop containers:
-
-```bash
-docker compose down
-```
-
----
+- **PostgreSQL**: `localhost:5432` (User: `d11appuser`, Database: `ipld11stars`)
 
 ### Option 2: Run with Local Maven
-
-1. Start PostgreSQL (e.g., using Docker for DB only):
-
-```bash
-docker compose up db -d
-```
-
-2. Build and run the Spring Boot backend:
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-The service will start on port `8080` with context path `/api`.
+Run tests (uses in-memory H2 in PostgreSQL compatibility mode):
 
----
-
-## Verifying Endpoints
-
-Once running, you can test the following endpoints:
-
-### 1. Health Check
 ```bash
-curl http://localhost:8080/api/health
-```
-Response:
-```json
-{"status":"UP","service":"ipl-d11-stars-backend","timestamp":1727440000000}
+cd backend
+mvn test
 ```
 
-### 2. View Matches
-```bash
-curl http://localhost:8080/api/matches
-```
+## Key API Endpoints
 
-### 3. Register User
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"firstName":"Virat","lastName":"Kohli","userId":"virat18","password":"password123"}'
-```
-
-### 4. Login
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"virat18","password":"password123"}'
-```
-
-### 5. View Contests
-```bash
-curl http://localhost:8080/api/contests
-```
+- `GET /api/health` — Service health status
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` — Auth & current user
+- `GET /api/matches` — List matches
+- `POST /api/matches/{id}/squad`, `GET /api/matches/{id}/squad` — Set and view match squad & Playing XI
+- `POST /api/matches/{id}/deliveries`, `DELETE /api/matches/{id}/deliveries/last` — Record or undo ball-by-ball deliveries
+- `GET /api/matches/{id}/scorecard`, `GET /api/matches/{id}/player-stats` — Match scorecard and fantasy points breakdown
+- `POST /api/matches/{id}/complete`, `POST /api/matches/{id}/abandon` — Complete or abandon a match and trigger contest lifecycle transitions
+- `POST /api/contests`, `GET /api/contests`, `GET /api/contests/{id}` — Create and query contests
+- `POST /api/contests/{id}/entries`, `GET /api/contests/{id}/entries/me` — Submit or view user fantasy entries
+- `GET /api/contests/{id}/leaderboard`, `GET /api/contests/{id}/prizes` — Live contest leaderboard and prize breakdown
+- `POST /api/contests/{id}/settle`, `POST /api/contests/{id}/cancel` — Settle or cancel a contest
+- `GET /api/wallet`, `POST /api/wallet/deposits`, `POST /api/wallet/withdrawals` — Wallet balance, transactions, deposits, and withdrawals
+- `POST /api/webhooks/payments` — Payment gateway webhook receiver (`X-Webhook-Signature` HMAC-SHA256)
+- `GET /api/notifications` — User email notification history
