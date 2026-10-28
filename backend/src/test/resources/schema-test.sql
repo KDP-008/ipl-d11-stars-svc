@@ -110,3 +110,150 @@ CREATE TABLE IF NOT EXISTS ipld11stars.entry_player_selections (
     is_starting_player boolean NOT NULL DEFAULT true,
     selected_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ipld11stars.match_squad (
+    id varchar(255) PRIMARY KEY,
+    match_id varchar(255) NOT NULL,
+    player_id varchar(255) NOT NULL,
+    team_id varchar(255),
+    is_starting_xi boolean NOT NULL DEFAULT false,
+    is_impact_player boolean NOT NULL DEFAULT false,
+    batting_order int,
+    bowling_order int,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_match_squad_match_player ON ipld11stars.match_squad(match_id, player_id);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.player_match_stats (
+    id varchar(255) PRIMARY KEY,
+    match_id varchar(255) NOT NULL,
+    player_id varchar(255) NOT NULL,
+    runs_scored int NOT NULL DEFAULT 0,
+    balls_faced int NOT NULL DEFAULT 0,
+    fours int NOT NULL DEFAULT 0,
+    sixes int NOT NULL DEFAULT 0,
+    wickets int NOT NULL DEFAULT 0,
+    overs_bowled numeric(4,1) NOT NULL DEFAULT 0.0,
+    maidens int NOT NULL DEFAULT 0,
+    runs_conceded int NOT NULL DEFAULT 0,
+    dot_balls int NOT NULL DEFAULT 0,
+    lbw_bowled int NOT NULL DEFAULT 0,
+    catches int NOT NULL DEFAULT 0,
+    stumpings int NOT NULL DEFAULT 0,
+    run_outs int NOT NULL DEFAULT 0,
+    strike_rate numeric(6,2),
+    economy_rate numeric(6,2),
+    points numeric(10,2) NOT NULL DEFAULT 0.00,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_player_match_stats_match_player ON ipld11stars.player_match_stats(match_id, player_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_contest_entries_contest_user ON ipld11stars.contest_entries(contest_id, user_id);
+
+-- ---------------------------------------------------------------------------
+-- Scoring, contest entries, wallet, payments and notifications
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS ipld11stars.match_deliveries (
+    id varchar(255) PRIMARY KEY,
+    match_id varchar(255) NOT NULL,
+    innings int NOT NULL,
+    sequence_no int NOT NULL,
+    over_number int NOT NULL,
+    ball_number int NOT NULL,
+    batting_team_id varchar(255) NOT NULL,
+    bowling_team_id varchar(255) NOT NULL,
+    striker_id varchar(255) NOT NULL,
+    non_striker_id varchar(255) NOT NULL,
+    bowler_id varchar(255) NOT NULL,
+    runs_batter int NOT NULL DEFAULT 0,
+    extras_type varchar(20) NOT NULL DEFAULT 'NONE',
+    extras_runs int NOT NULL DEFAULT 0,
+    is_legal boolean NOT NULL DEFAULT true,
+    is_free_hit boolean NOT NULL DEFAULT false,
+    is_wicket boolean NOT NULL DEFAULT false,
+    dismissal_type varchar(30),
+    dismissed_player_id varchar(255),
+    fielder_id varchar(255),
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_match_deliveries_match_innings_seq ON ipld11stars.match_deliveries(match_id, innings, sequence_no);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.contest_prizes (
+    id varchar(255) PRIMARY KEY,
+    contest_id varchar(255) NOT NULL,
+    rank_from int NOT NULL,
+    rank_to int NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_contest_prizes_contest_id ON ipld11stars.contest_prizes(contest_id);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.wallets (
+    user_id varchar(255) PRIMARY KEY,
+    balance numeric(12,2) NOT NULL DEFAULT 0.00,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.wallet_transactions (
+    id varchar(255) PRIMARY KEY,
+    user_id varchar(255) NOT NULL,
+    txn_type varchar(30) NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    balance_after numeric(12,2) NOT NULL,
+    reference_type varchar(30),
+    reference_id varchar(255),
+    idempotency_key varchar(255) NOT NULL,
+    description varchar(500),
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_wallet_transactions_idempotency_key ON ipld11stars.wallet_transactions(idempotency_key);
+CREATE INDEX IF NOT EXISTS idx_wallet_transactions_user_id ON ipld11stars.wallet_transactions(user_id);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.payment_orders (
+    id varchar(255) PRIMARY KEY,
+    user_id varchar(255) NOT NULL,
+    direction varchar(20) NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    currency varchar(3) NOT NULL DEFAULT 'INR',
+    status varchar(30) NOT NULL,
+    gateway_order_id varchar(255),
+    gateway_reference_id varchar(255),
+    failure_reason varchar(500),
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_orders_gateway_order_id ON ipld11stars.payment_orders(gateway_order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_orders_user_id ON ipld11stars.payment_orders(user_id);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.payment_webhook_events (
+    event_id varchar(255) PRIMARY KEY,
+    event_type varchar(100) NOT NULL,
+    gateway_order_id varchar(255),
+    outcome varchar(50) NOT NULL,
+    payload text,
+    received_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ipld11stars.email_notifications (
+    id varchar(255) PRIMARY KEY,
+    user_id varchar(255) NOT NULL,
+    recipient varchar(255),
+    template varchar(60) NOT NULL,
+    subject varchar(255) NOT NULL,
+    body text NOT NULL,
+    status varchar(20) NOT NULL,
+    error varchar(500),
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sent_at timestamp
+);
+CREATE INDEX IF NOT EXISTS idx_email_notifications_user_id ON ipld11stars.email_notifications(user_id);
+-- Columns added to existing tables (idempotent for databases created before these features)
+ALTER TABLE ipld11stars.contests ADD COLUMN IF NOT EXISTS min_entries int NOT NULL DEFAULT 2;
+ALTER TABLE ipld11stars.contests ADD COLUMN IF NOT EXISTS locked_at timestamp;
+ALTER TABLE ipld11stars.contests ADD COLUMN IF NOT EXISTS settled_at timestamp;
+ALTER TABLE ipld11stars.contest_entries ADD COLUMN IF NOT EXISTS entry_fee_paid numeric(12,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE ipld11stars.contest_entries ADD COLUMN IF NOT EXISTS prize_amount numeric(12,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE ipld11stars.player_match_stats ADD COLUMN IF NOT EXISTS balls_bowled int NOT NULL DEFAULT 0;
+ALTER TABLE ipld11stars.player_match_stats ADD COLUMN IF NOT EXISTS is_dismissed boolean NOT NULL DEFAULT false;
+ALTER TABLE ipld11stars.player_match_stats ADD COLUMN IF NOT EXISTS updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP;

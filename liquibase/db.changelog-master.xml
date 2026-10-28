@@ -336,4 +336,273 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="20261028-12-create-match_deliveries" author="kdp">
+        <createTable tableName="match_deliveries">
+            <column name="id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="match_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="innings" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sequence_no" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="over_number" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ball_number" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="batting_team_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bowling_team_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="striker_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="non_striker_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bowler_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="runs_batter" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="extras_type" type="varchar(20)" defaultValue="NONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="extras_runs" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_legal" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_free_hit" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_wicket" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dismissal_type" type="varchar(30)"/>
+            <column name="dismissed_player_id" type="varchar(255)"/>
+            <column name="fielder_id" type="varchar(255)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="match_deliveries" indexName="uq_match_deliveries_match_innings_seq" unique="true">
+            <column name="match_id"/>
+            <column name="innings"/>
+            <column name="sequence_no"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261028-13-create-contest_prizes" author="kdp">
+        <createTable tableName="contest_prizes">
+            <column name="id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="contest_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank_from" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank_to" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="numeric(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="contest_prizes" indexName="idx_contest_prizes_contest_id">
+            <column name="contest_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261028-14-create-wallets" author="kdp">
+        <createTable tableName="wallets">
+            <column name="user_id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="balance" type="numeric(12,2)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20261028-15-create-wallet_transactions" author="kdp">
+        <createTable tableName="wallet_transactions">
+            <column name="id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="txn_type" type="varchar(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="numeric(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance_after" type="numeric(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reference_type" type="varchar(30)"/>
+            <column name="reference_id" type="varchar(255)"/>
+            <column name="idempotency_key" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="varchar(500)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="wallet_transactions" indexName="uq_wallet_transactions_idempotency_key" unique="true">
+            <column name="idempotency_key"/>
+        </createIndex>
+        <createIndex tableName="wallet_transactions" indexName="idx_wallet_transactions_user_id">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261028-16-create-payment_orders" author="kdp">
+        <createTable tableName="payment_orders">
+            <column name="id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="direction" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="numeric(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="varchar(3)" defaultValue="INR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gateway_order_id" type="varchar(255)"/>
+            <column name="gateway_reference_id" type="varchar(255)"/>
+            <column name="failure_reason" type="varchar(500)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="payment_orders" indexName="uq_payment_orders_gateway_order_id" unique="true">
+            <column name="gateway_order_id"/>
+        </createIndex>
+        <createIndex tableName="payment_orders" indexName="idx_payment_orders_user_id">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261028-17-create-payment_webhook_events" author="kdp">
+        <createTable tableName="payment_webhook_events">
+            <column name="event_id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gateway_order_id" type="varchar(255)"/>
+            <column name="outcome" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="text"/>
+            <column name="received_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20261028-18-create-email_notifications" author="kdp">
+        <createTable tableName="email_notifications">
+            <column name="id" type="varchar(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="recipient" type="varchar(255)"/>
+            <column name="template" type="varchar(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subject" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="body" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error" type="varchar(500)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sent_at" type="timestamp with time zone"/>
+        </createTable>
+        <createIndex tableName="email_notifications" indexName="idx_email_notifications_user_id">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261028-19-add-columns-contests" author="kdp">
+        <addColumn tableName="contests">
+            <column name="min_entries" type="int" defaultValueNumeric="2">
+                <constraints nullable="false"/>
+            </column>
+            <column name="locked_at" type="timestamp with time zone"/>
+            <column name="settled_at" type="timestamp with time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20261028-20-add-columns-contest_entries" author="kdp">
+        <addColumn tableName="contest_entries">
+            <column name="entry_fee_paid" type="numeric(12,2)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prize_amount" type="numeric(12,2)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20261028-21-add-columns-player_match_stats" author="kdp">
+        <addColumn tableName="player_match_stats">
+            <column name="balls_bowled" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_dismissed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp with time zone" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

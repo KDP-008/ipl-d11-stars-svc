@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,6 +41,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/auth/register", "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/matches/*/deliveries", "/matches/*/complete", "/matches/*/abandon").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/matches/*/squad").hasRole("ADMIN")
                 .requestMatchers("/matches/**").permitAll()
                 .requestMatchers("/contests", "/contests/*").permitAll()
                 .requestMatchers("/contests/create").authenticated()
