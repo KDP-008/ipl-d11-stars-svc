@@ -6,16 +6,17 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 
 /**
  * UTC clock that tests can move. Starts at the real current time.
  */
 public class MutableClock extends Clock {
 
-    private volatile Instant instant = Instant.now();
+    private volatile Instant instant = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
     public void reset() {
-        instant = Instant.now();
+        instant = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     }
 
     public void advance(Duration d) {
